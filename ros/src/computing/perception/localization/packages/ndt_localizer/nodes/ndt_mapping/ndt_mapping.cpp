@@ -66,6 +66,8 @@
 
 #include <runtime_manager/ConfigNdtMapping.h>
 #include <runtime_manager/ConfigNdtMappingOutput.h>
+#include <pcl-1.7/pcl/point_cloud.h>
+#include <boost/smart_ptr/shared_ptr.hpp>
 
 struct pose {
     double x;
@@ -172,8 +174,39 @@ static void output_callback(const runtime_manager::ConfigNdtMappingOutput::Const
   }    
 }
 
-static void points_callback(const sensor_msgs::PointCloud2::ConstPtr& input)
+
+// output function : output map as a pcd file
+static void output()
 {
+    static double name = 0;
+    std::ostringstream interFilename;
+    interFilename << "/home/boris/Desktop/autoware-map-" << name << ".pcd";
+    std::string filename = interFilename.str();
+    name++;
+    
+    double filter_res = 0.2;
+    pcl::PointCloud<pcl::PointXYZI>::Ptr map_ptr(new pcl::PointCloud<pcl::PointXYZI>(map));
+    pcl::PointCloud<pcl::PointXYZI>::Ptr map_filtered(new pcl::PointCloud<pcl::PointXYZI>());
+    map_ptr->header.frame_id = "map";
+    map_filtered->header.frame_id = "map";
+    sensor_msgs::PointCloud2::Ptr map_msg_ptr(new sensor_msgs::PointCloud2);
+    
+    // Apply voxelgrid filter
+    pcl::VoxelGrid<pcl::PointXYZI> voxel_grid_filter;
+    voxel_grid_filter.setLeafSize(filter_res, filter_res, filter_res);
+    voxel_grid_filter.setInputCloud(map_ptr);
+    voxel_grid_filter.filter(*map_filtered);
+    pcl::toROSMsg(*map_filtered, *map_msg_ptr);
+    
+    ndt_map_pub.publish(*map_msg_ptr);
+    
+    // Writing Point Cloud data to PCD file
+    pcl::io::savePCDFileASCII(filename, *map_filtered);
+}
+
+
+static void points_callback(const sensor_msgs::PointCloud2::ConstPtr& input)
+{       
     double r;
     pcl::PointXYZI p; 
     pcl::PointCloud<pcl::PointXYZI> tmp, scan;
@@ -363,6 +396,25 @@ static void points_callback(const sensor_msgs::PointCloud2::ConstPtr& input)
     std::cout << "shift: " << shift << std::endl;
     std::cout << "-----------------------------------------------------------------" << std::endl;
     
+    static double nb_points = 0;
+    static double map_size = 0;
+    map_size += map.points.size();
+    
+    std::cout << "points : " << nb_points << std::endl;
+    std::cout << "map: " << map_size << " points." << std::endl;
+    
+    if( map_size > 300000 )
+    {
+        output();
+        nb_points = 0;
+        map.clear();
+        map_size = 0;
+        map += *transformed_scan_ptr;
+    }
+    else
+    {
+        nb_points++;
+    }
 }
 
 int main(int argc, char **argv)

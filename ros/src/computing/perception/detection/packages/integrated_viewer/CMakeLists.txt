@@ -40,14 +40,14 @@ add_definitions(-DQT_NO_KEYWORDS)
 
 # Here we wpecify which ui files need to be run through "uic",
 # Qt's user-interface compiler.
-qt4_wrap_ui(UI_HEADERS
+qt5_wrap_ui(UI_HEADERS
   node/traffic_light_plugin/form.ui
   node/image_viewer_plugin/image_viewer_form.ui
   )
 
 # Here we specify which header files need to be run through "moc",
 # Qt's meta-object compiler.
-qt4_wrap_cpp(MOC_FILES
+qt5_wrap_cpp(MOC_FILES
   node/traffic_light_plugin/traffic_light_plugin.h
   node/image_viewer_plugin/image_viewer_plugin.h
   )
