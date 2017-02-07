@@ -175,6 +175,7 @@ static void output_callback(const runtime_manager::ConfigNdtMappingOutput::Const
 }
 
 
+
 // output function : output map as a pcd file
 static void output()
 {
@@ -395,6 +396,7 @@ static void points_callback(const sensor_msgs::PointCloud2::ConstPtr& input)
     std::cout << t_localizer << std::endl;
     std::cout << "shift: " << shift << std::endl;
     std::cout << "-----------------------------------------------------------------" << std::endl;
+    
     
     static double nb_points = 0;
     static double map_size = 0;
